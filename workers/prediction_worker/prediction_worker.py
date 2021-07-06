@@ -17,15 +17,18 @@ class PredictionWorker:
         self.df = None
         self.stock = stock.upper()
 
-        self.model = tf.keras.models.load_model('../../models/time_series/gru')
+        self.model = tf.keras.models.load_model(
+            '/environment/models/time_series/gru')
 
         self.get_stock_data()
 
     def load_scalers(self):
         scalers = {}
-        scalers['close'] = joblib.load('../../scalers/close_scaler.pkl')
-        scalers['volume'] = joblib.load('../../scalers/volume_scaler.pkl')
-        scalers['change'] = joblib.load('../../scalers/change_scaler.pkl')
+        scalers['close'] = joblib.load('/environment/scalers/close_scaler.pkl')
+        scalers['volume'] = joblib.load(
+            '/environment/scalers/volume_scaler.pkl')
+        scalers['change'] = joblib.load(
+            '/environment/scalers/change_scaler.pkl')
         return scalers
 
     def scale_data(self):
