@@ -18,9 +18,9 @@ init_db(app)
 migrate = Migrate(app, db)
 
 
-@app.route('/predict')
-def handle_predict():
-    prediction_worker = PredictionWorker()
+@app.route('/predict/<string:symbol>')
+def handle_predict(symbol):
+    prediction_worker = PredictionWorker(stock=symbol)
     predictions = prediction_worker.get_predictions()
     return jsonify({'predictions': predictions[0].tolist()})
 

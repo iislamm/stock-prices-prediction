@@ -7,7 +7,7 @@ class Prediction(db.Model):
     close = db.Column(db.Float, nullable=False)
 
     def insert(self):
-        db.session.add()
+        db.session.add(self)
         db.session.commit()
 
     def to_dict(self):

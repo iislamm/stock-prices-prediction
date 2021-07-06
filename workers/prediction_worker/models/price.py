@@ -13,7 +13,7 @@ class Price(db.Model):
     )
 
     def insert(self):
-        db.session.add()
+        db.session.add(self)
         db.session.commit()
 
     def to_dict(self):

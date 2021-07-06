@@ -8,7 +8,7 @@ class Headline(db.Model):
     date = db.Column(db.DateTime(), nullable=False, unique=True)
 
     def insert(self):
-        db.session.add()
+        db.session.add(self)
         db.session.commit()
 
     def to_dict(self):

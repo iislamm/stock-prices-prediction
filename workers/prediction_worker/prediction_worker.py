@@ -1,9 +1,9 @@
-import numpy as np
+import datetime
+from models.prediction import Prediction
 from models.sentiment import Sentiment
 import tensorflow as tf
 import pandas as pd
 import joblib
-import re
 from models.price import Price
 from sqlalchemy import desc
 
@@ -15,7 +15,7 @@ class PredictionWorker:
     def __init__(self, stock='NFLX'):
         self.scalers = self.load_scalers()
         self.df = None
-        self.stock = stock
+        self.stock = stock.upper()
 
         self.model = tf.keras.models.load_model('../../models/time_series/gru')
 
@@ -38,33 +38,12 @@ class PredictionWorker:
             self.df['change'].values.reshape(-1, 1))
 
     def get_stock_data(self):
-        def dateparse(dates): return pd.to_datetime(dates, format='%Y-%m-%d')
-        # self.df = pd.read_csv('../../datasets/nflx_prices.csv',
-        #                       index_col='Date', parse_dates=['Date'], date_parser=dateparse)
-
-        # self.df.drop(columns=['Open', 'High', 'Low'], inplace=True)
-        # self.df = self.df.rename(
-        #     columns={'Close': 'close', 'Volume': 'volume'})
-        # self.df = self.df.drop(columns=['Adj Close'])
-
-        # self.df['change'] = self.df['close'].pct_change()
-        # self.df.dropna(inplace=True)
-
-        # news_df = pd.read_csv('../../datasets/analyzed_news.csv',
-        #                       index_col=0, parse_dates=['date'], date_parser=dateparse)
-        # news_df = news_df.where(news_df['stock'] == 'NFLX').dropna()
-        # news_df['sentiment'] = news_df['sentiment'].apply(
-        #     lambda x: float(re.findall('\d+\.\d+', x)[0]))
-        # grouped_df = pd.DataFrame(news_df.groupby(['date']).mean())
-
-        # self.df = self.df.join(grouped_df)
-        # self.df['sentiment'].fillna(-1, inplace=True)
-
         prices = Price.query.filter(
             Price.symbol == self.stock.upper()).order_by(desc(Price.date)).limit(20).all()
         prices = [p.to_dict() for p in prices]
 
         self.df = pd.DataFrame(prices)
+
         self.df.set_index('date', inplace=True)
         self.df.drop(columns=['symbol'], inplace=True)
 
@@ -95,6 +74,19 @@ class PredictionWorker:
         ds = ds.batch(32).prefetch(1)
         return ds
 
+    def save_predictions(self, predictions):
+        start_date = self.df.index.max() + datetime.timedelta(days=1)
+
+        for p in predictions[0]:
+            start_date = start_date + datetime.timedelta(days=1)
+            if start_date.weekday() > 4:
+                start_date = start_date + \
+                    datetime.timedelta(days=7 - start_date.weekday())
+
+            new_prediction = Prediction(
+                symbol=self.stock, date=start_date, close=float(p))
+            new_prediction.insert()
+
     def get_predictions(self):
         scaler = self.scalers['close']
         ds = self.prepare_prediction_data()
@@ -102,7 +94,8 @@ class PredictionWorker:
         prediction = self.model.predict(ds)
         prediction = scaler.inverse_transform(prediction)
 
-        # TODO: Save the prediction to the database
+        self.save_predictions(prediction)
+
         return prediction
 
 

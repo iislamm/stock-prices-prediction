@@ -10,7 +10,7 @@ class Stock(db.Model):
     headlines = db.relationship('Headline', backref='stock')
 
     def insert(self):
-        db.session.add()
+        db.session.add(self)
         db.session.commit()
 
     def to_dict(self):

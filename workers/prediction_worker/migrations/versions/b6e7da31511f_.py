@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 534f3c7967cd
+Revision ID: b6e7da31511f
 Revises: 
-Create Date: 2021-07-05 11:29:06.073268
+Create Date: 2021-07-06 19:37:05.237531
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '534f3c7967cd'
+revision = 'b6e7da31511f'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -34,33 +34,28 @@ def upgrade():
     sa.UniqueConstraint('date')
     )
     op.create_table('prediction',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('symbol', sa.String(), nullable=True),
-    sa.Column('close', sa.Float(), nullable=False),
-    sa.Column('volume', sa.Float(), nullable=False),
+    sa.Column('symbol', sa.String(), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=False),
+    sa.Column('close', sa.Float(), nullable=False),
     sa.ForeignKeyConstraint(['symbol'], ['stock.symbol'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('date')
+    sa.PrimaryKeyConstraint('symbol', 'date')
     )
     op.create_table('price',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('symbol', sa.String(), nullable=True),
-    sa.Column('close', sa.Float(), nullable=True),
-    sa.Column('volume', sa.Float(), nullable=True),
+    sa.Column('symbol', sa.String(), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=False),
+    sa.Column('close', sa.Float(), nullable=True),
+    sa.Column('change', sa.Float(), nullable=True),
+    sa.Column('volume', sa.Float(), nullable=True),
     sa.ForeignKeyConstraint(['symbol'], ['stock.symbol'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('date')
+    sa.PrimaryKeyConstraint('symbol', 'date'),
+    sa.UniqueConstraint('symbol', 'date')
     )
     op.create_table('sentiment',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('symbol', sa.String(), nullable=True),
-    sa.Column('sentiment', sa.Float(), nullable=False),
+    sa.Column('symbol', sa.String(), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=False),
+    sa.Column('sentiment', sa.Float(), nullable=False),
     sa.ForeignKeyConstraint(['symbol'], ['stock.symbol'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('date')
+    sa.PrimaryKeyConstraint('symbol', 'date')
     )
     # ### end Alembic commands ###
 
