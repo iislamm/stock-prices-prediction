@@ -1,16 +1,17 @@
 version: '3.9'
 services:
   server:
-    build: ./prediction_worker
+    build: .
     command: gunicorn app:app --bind 0.0.0.0:5000 --reload
     ports:
       - 5000:5000
     volumes:
       - ../models:/environment/models
       - ../scalers:/environment/scalers
-      - ./prediction_worker:/app
+      - .:/app
     environment:
       PYTHONUNBUFFERED: 1
+      SQLALCHEMY_DATABASE_URI: 'postgresql://islam:123123@db/stocks'
     depends_on:
       - db
     links:
