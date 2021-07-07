@@ -1,0 +1,26 @@
+version: '3.9'
+services:
+  server:
+    build: ./prediction_worker
+    command: gunicorn app:app --bind 0.0.0.0:5000 --reload
+    ports:
+      - 5000:5000
+    volumes:
+      - ../models:/environment/models
+      - ../scalers:/environment/scalers
+      - ./prediction_worker:/app
+    environment:
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      - db
+    links:
+      - db
+
+  db:
+    image: 'postgres'
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: 123123
+      POSTGRES_USER: 'islam'
