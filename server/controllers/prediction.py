@@ -6,6 +6,11 @@ import pandas as pd
 import joblib
 from models.price import Price
 from sqlalchemy import desc
+from sqlalchemy.exc import IntegrityError
+from db import db
+import os
+import boto3
+import shutil
 
 
 joblib.clip = False
@@ -17,13 +22,51 @@ class PredictionController:
         self.df = None
         self.stock = stock.upper()
 
-        self.model = tf.keras.models.load_model(
-            '/environment/models/time_series/gru')
+        # self.model = tf.keras.models.load_model(
+        #     '/environment/models/time_series/gru')
+
+        self.load_model()
 
         self.get_stock_data()
 
+    def download_folder_from_s3(prefix):
+        region_name = os.environ.get('AWS_REGION_NAME')
+        aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID')
+        aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+        s3_resource = boto3.resource('s3', region_name=region_name,
+                                     aws_access_key_id=aws_access_key_id,
+                                     aws_secret_access_key=aws_secret_access_key)
+        bucket = s3_resource.Bucket('stocks-prediction')
+        for obj in bucket.objects.filter(Prefix=prefix):
+            print(obj.key)
+            target_dir = '/environment/' + obj.key
+            if not os.path.exists(os.path.dirname(target_dir)):
+                os.makedirs(os.path.dirname(target_dir))
+            if obj.key[-1] == '/':
+                continue
+            print('object', obj.key)
+            print('target', target_dir)
+            bucket.download_file(obj.key, target_dir)
+
+    def load_model(self):
+        model_dir = '/environment/models/time_series'
+        # shutil.rmtree(model_dir)
+        if os.path.isdir(model_dir):
+            print('model downloaded')
+        else:
+            print('downloading model')
+            PredictionController.download_folder_from_s3('models/time_series')
+
+        self.model = tf.keras.models.load_model(
+            '/environment/models/time_series/')
+
     def load_scalers(self):
         scalers = {}
+
+        if not os.path.isdir('/environment/scalers'):
+            print('downloading scalers')
+            PredictionController.download_folder_from_s3('scalers')
+
         scalers['close'] = joblib.load('/environment/scalers/close_scaler.pkl')
         scalers['volume'] = joblib.load(
             '/environment/scalers/volume_scaler.pkl')
@@ -85,10 +128,13 @@ class PredictionController:
             if start_date.weekday() > 4:
                 start_date = start_date + \
                     datetime.timedelta(days=7 - start_date.weekday())
-
-            new_prediction = Prediction(
-                symbol=self.stock, date=start_date, close=float(p))
-            new_prediction.insert()
+            try:
+                new_prediction = Prediction(
+                    symbol=self.stock, date=start_date, close=float(p))
+                new_prediction.insert()
+            except IntegrityError:
+                db.session.rollback()
+                print('prediction already saved in database')
 
     def get_predictions(self):
         scaler = self.scalers['close']

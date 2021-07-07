@@ -5,3 +5,8 @@ Datasets/
 env
 /models/
 scalers/
+.env
+
+__pycache__
+
+migrations

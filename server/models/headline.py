@@ -5,7 +5,11 @@ class Headline(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     symbol = db.Column(db.ForeignKey('stock.symbol'))
     headline = db.Column(db.String(), nullable=False)
-    date = db.Column(db.DateTime(), nullable=False, unique=True)
+    date = db.Column(db.DateTime(), nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint("symbol", "headline"),
+    )
 
     def insert(self):
         db.session.add(self)

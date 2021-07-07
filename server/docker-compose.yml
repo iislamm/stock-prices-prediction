@@ -2,26 +2,14 @@ version: '3.9'
 services:
   server:
     build: .
-    command: gunicorn app:app --bind 0.0.0.0:5000 --reload
+    command: gunicorn app:app --bind 0.0.0.0:80 --reload -t 600
     ports:
-      - 5000:5000
+      - 80:80
     volumes:
-      - ../models:/environment/models
-      - ../scalers:/environment/scalers
       - .:/app
     environment:
       PYTHONUNBUFFERED: 1
-      SQLALCHEMY_DATABASE_URI: 'postgresql://islam:123123@db/stocks'
-    depends_on:
-      - db
-    links:
-      - db
-
-  db:
-    image: 'postgres'
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_PASSWORD: 123123
-      POSTGRES_USER: 'islam'
+      SQLALCHEMY_DATABASE_URI: ${DATABASE_URI}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION_NAME: ${AWS_REGION_NAME}
