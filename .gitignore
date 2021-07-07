@@ -10,3 +10,4 @@ scalers/
 __pycache__
 
 migrations
+/db_export
