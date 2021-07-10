@@ -16,3 +16,5 @@ scalers/
 __pycache__
 
 migrations
+.devcontainer
+install_eb_linux_container.sh

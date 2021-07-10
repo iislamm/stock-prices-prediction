@@ -1,8 +1,10 @@
+from sqlalchemy import desc
 from controllers.price_scrapper import PricesScrapper
 from controllers.news_scrapper import NewsScrapper
 from config import Config
 from db import init_db, db
 from flask import Flask, jsonify
+from flask_cors import CORS
 from controllers.prediction import PredictionController
 from flask_migrate import Migrate
 from models.headline import Headline
@@ -12,6 +14,8 @@ from models.sentiment import Sentiment
 from models.stock import Stock
 
 app = Flask(__name__)
+
+CORS(app)
 
 app.config.from_object(Config())
 
@@ -44,6 +48,14 @@ def handle_news_scrape():
     news_scrapper = NewsScrapper()
     news_scrapper.scrape_all()
     return jsonify({'success': True})
+
+
+@app.route('/prices/<string:symbol>')
+def handle_prices(symbol):
+    prices = Price.query.filter(Price.symbol == symbol.upper()).order_by(desc(Price.date)).limit(100).all()
+    prices = [p.to_dict() for p in prices]
+
+    return jsonify({'prices': prices})
 
 
 if __name__ == '__main__':
