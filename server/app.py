@@ -1,3 +1,4 @@
+import datetime
 from sqlalchemy import desc
 from controllers.price_scrapper import PricesScrapper
 from controllers.news_scrapper import NewsScrapper
@@ -32,8 +33,14 @@ def handle_hello():
 @app.route('/predict/<string:symbol>')
 def handle_predict(symbol):
     prediction_worker = PredictionController(stock=symbol)
-    predictions = prediction_worker.get_predictions()
-    return jsonify({'predictions': predictions[0].tolist()})
+    predictions = prediction_worker.generate_predictions()
+    return jsonify({'predictions': predictions})
+
+@app.route('/predict')
+def handle_predict_all():
+    prediction_worker = PredictionController(stock='nflx')
+    prediction_worker.predict_all()
+    return {'success': True}
 
 
 @app.route('/scrape/prices')
@@ -52,10 +59,20 @@ def handle_news_scrape():
 
 @app.route('/prices/<string:symbol>')
 def handle_prices(symbol):
+    stock = Stock.query.filter(Stock.symbol == symbol.upper()).first()
+    stock = stock.to_dict()
     prices = Price.query.filter(Price.symbol == symbol.upper()).order_by(desc(Price.date)).limit(100).all()
     prices = [p.to_dict() for p in prices]
 
-    return jsonify({'prices': prices})
+    predictions = Prediction.query.filter(Prediction.symbol == symbol.upper()
+                                          ).order_by(desc(Prediction.date)).limit(5).all()
+    predictions = [p.to_dict() for p in predictions]
+    date_diff = datetime.datetime.now() - predictions[0]['date']
+    date_diff = date_diff.days
+
+    # TODO Check if the prediciton is in the right period
+
+    return jsonify({'prices': prices, 'stock': stock, 'predictions': predictions})
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ import pandas as pd
 from sqlalchemy.sql.expression import desc
 from models.price import Price
 from models.stock import Stock
+from models.prediction import Prediction
 
 
 class PricesScrapper:
@@ -83,3 +84,16 @@ class PricesScrapper:
         for s in all_stocks:
             self.symbol = s.upper()
             self.get_prices()
+
+    def get_predictions(self, start_date=None):
+        predictions = Prediction.query.filter(Prediction.symbol == self.stock.upper()
+                                              ).order_by(desc(Prediction.date)).limit(5).all()
+        predictions = [p.to_dict() for p in predictions]
+        date_diff = datetime.datetime.now() - predictions[0]['date']
+        date_diff = date_diff.days
+
+        latest_db_date = predictions[0]['date']
+
+        # TODO Check if the prediciton is in the right period
+
+        return predictions

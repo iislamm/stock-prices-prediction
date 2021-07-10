@@ -1,6 +1,9 @@
 import datetime
+
+from sqlalchemy.sql.expression import all_
 from models.prediction import Prediction
 from models.sentiment import Sentiment
+from models.stock import Stock
 import tensorflow as tf
 import pandas as pd
 import joblib
@@ -122,7 +125,7 @@ class PredictionController:
 
     def save_predictions(self, predictions):
         start_date = self.df.index.max() + datetime.timedelta(days=1)
-
+        prediction_records = []
         for p in predictions[0]:
             start_date = start_date + datetime.timedelta(days=1)
             if start_date.weekday() > 4:
@@ -131,18 +134,30 @@ class PredictionController:
             try:
                 new_prediction = Prediction(
                     symbol=self.stock, date=start_date, close=float(p))
+                prediction_records.append(new_prediction)
                 new_prediction.insert()
             except IntegrityError:
                 db.session.rollback()
                 print('prediction already saved in database')
+        prediction_records = [p.to_dict() for p in prediction_records]
+        return prediction_records
 
-    def get_predictions(self):
+    def generate_predictions(self):
         scaler = self.scalers['close']
         ds = self.prepare_prediction_data()
 
         prediction = self.model.predict(ds)
         prediction = scaler.inverse_transform(prediction)
 
-        self.save_predictions(prediction)
+        prediction_records = self.save_predictions(prediction)
 
-        return prediction
+        return prediction_records
+
+    def predict_all(self):
+        all_stocks = Stock.query.all()
+        all_stocks = [s.to_dict() for s in all_stocks]
+
+        for s in all_stocks:
+            self.stock = s['symbol']
+            self.get_stock_data()
+            self.generate_predictions()
