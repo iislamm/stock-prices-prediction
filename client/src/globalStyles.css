@@ -5,3 +5,7 @@
 .negative-change {
   color: red;
 }
+
+.recharts-legend-wrapper {
+  bottom: -10px !important;
+}

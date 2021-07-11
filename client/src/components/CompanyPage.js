@@ -1,10 +1,11 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from "recharts";
 import { get_prices } from "../controllers/pricesController";
 import ArrowUpword from "@material-ui/icons/ArrowUpward";
 import ArrowDownward from "@material-ui/icons/ArrowDownward";
+import { InputLabel, MenuItem, Select } from "@material-ui/core";
 
 function getWindowDimensions() {
   const { innerWidth: width, innerHeight: height } = window;
@@ -24,7 +25,8 @@ function CompanyPage() {
     getWindowDimensions()
   );
   const [chartWidth, setChartWidth] = useState(900);
-  const [priceRange, setPriceRange] = useState(null);
+	const [priceRange, setPriceRange] = useState(null);
+	const [recordsCount, setRecordsCount] = useState(25);
 
   useEffect(() => {
     if (!prices) {
@@ -32,11 +34,17 @@ function CompanyPage() {
         setPrices(prices);
         setStock(stock);
         setPredictions(predictions);
-        setData([...prices.slice(-20, -1), ...predictions]);
+        setData([...prices.slice(-recordsCount - 5, -1), ...predictions]);
       });
     }
     console.log({ data });
-  }, [data, prices, predictions, symbol]);
+	}, [data, prices, predictions, symbol, recordsCount]);
+	
+	useEffect(() => {
+		if (prices && predictions) {
+			setData([...prices.slice(-recordsCount - 5, -1), ...predictions]);
+		}	
+	}, [recordsCount, prices, predictions])
 
   useEffect(() => {
     setPrices(null);
@@ -101,20 +109,35 @@ function CompanyPage() {
               )}
               {prices[prices.length - 1].change}%
             </h4>
-          </header>
+					</header>
+					<div>
+						<InputLabel id='count-label'>Records Count</InputLabel>
+						<Select
+							labelId='count-label'
+							id='count-select'
+							value={recordsCount}
+							onChange={e => setRecordsCount(e.target.value)}>
+							<MenuItem value={25}>1M</MenuItem>
+							<MenuItem value={45}>2M</MenuItem>
+							<MenuItem value={65}>3M</MenuItem>
+							<MenuItem value={85}>4M</MenuItem>
+							<MenuItem value={105}>5M</MenuItem>
+							<MenuItem value={125}>6M</MenuItem>
+							<MenuItem value={245}>1Y</MenuItem>
+							</Select>
+					</div>
           <LineChart
             className="chart"
             width={chartWidth}
             height={400}
             data={data}
           >
+						<Legend className='legend' />
             <Line type="monotone" dataKey="close" stroke="#8884d8" />
-            {predictions && (
-              <Line type="monotone" dataKey="prediction" stroke="#bd84d8" />
-            )}
-            <XAxis dataKey="date" />
+            <Line type="monotone" dataKey="prediction" stroke="#bd84d8" />
+						<XAxis dataKey="date" allowDuplicatedCategory={false} />
             <YAxis type="number" domain={priceRange} />
-            <Tooltip />
+						<Tooltip />
           </LineChart>
         </React.Fragment>
       ) : (

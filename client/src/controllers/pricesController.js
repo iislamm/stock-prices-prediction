@@ -1,7 +1,6 @@
 import moment from "moment";
 
-const url =
-  "http://stocks-prediction-backend.eba-jf2rqnk2.me-south-1.elasticbeanstalk.com";
+const url = "https://stock-prediction-backend.click";
 
 const formatDate = (date) => moment(date).format("MMMM D YYYY");
 
@@ -9,6 +8,7 @@ export const get_prices = async (symbol) => {
   const res = await fetch(`${url}/prices/${symbol}`);
   const body = await res.json();
   let { prices, predictions } = body;
+  let tradingDays = []
 
   prices = prices.map((p) => ({
     ...p,
@@ -19,11 +19,20 @@ export const get_prices = async (symbol) => {
 
   prices.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+  for (let p in prices) {
+    tradingDays.push(new Date(prices[p].date))
+  }
 
   predictions = predictions.map((p) => ({
     prediction: Number(Number(p.close).toFixed(2)),
     date: formatDate(p.date),
   }));
+
+  predictions = predictions.filter(
+    (p) =>
+      new Date(p.date) > Math.max.apply(null, tradingDays) ||
+      tradingDays.includes(new Date(p.date))
+  );
 
   predictions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
