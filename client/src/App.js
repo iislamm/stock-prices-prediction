@@ -17,6 +17,7 @@ function App() {
           <Navbar />
           <Switch>
             <Route exact path="/">
+              
               <Redirect to="/company/nflx" />
             </Route>
             <Route exact path="/company/:symbol">
