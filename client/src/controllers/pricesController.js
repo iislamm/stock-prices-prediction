@@ -12,6 +12,8 @@ export const get_prices = async (symbol) => {
 
   prices = prices.map((p) => ({
     ...p,
+    close: Number(Number(p.close).toFixed(2)),
+    change: Number((Number(p.change) * 100).toFixed(2)),
     date: formatDate(p.date),
   }));
 
@@ -19,9 +21,8 @@ export const get_prices = async (symbol) => {
 
 
   predictions = predictions.map((p) => ({
-    prediction: p.close,
+    prediction: Number(Number(p.close).toFixed(2)),
     date: formatDate(p.date),
-    
   }));
 
   predictions.sort((a, b) => new Date(a.date) - new Date(b.date));
