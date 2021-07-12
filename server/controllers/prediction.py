@@ -88,7 +88,7 @@ class PredictionController:
 
     def get_stock_data(self):
         prices = Price.query.filter(
-            Price.symbol == self.stock.upper()).order_by(desc(Price.date)).limit(20).all()
+            Price.symbol == self.stock.upper()).order_by(desc(Price.date)).all()
         prices = [p.to_dict() for p in prices]
 
         self.df = pd.DataFrame(prices)
@@ -97,7 +97,7 @@ class PredictionController:
         self.df.drop(columns=['symbol'], inplace=True)
 
         sentiments = Sentiment.query.filter(
-            Sentiment.symbol == self.stock).order_by(desc(Sentiment.date)).limit(20).all()
+            Sentiment.symbol == self.stock).order_by(desc(Sentiment.date)).all()
         sentiments = [s.to_dict() for s in sentiments]
 
         sentiments_df = pd.DataFrame(sentiments)
@@ -116,18 +116,39 @@ class PredictionController:
 
         self.scale_data()
 
-    def prepare_prediction_data(self):
-        ds = tf.data.Dataset.from_tensor_slices(self.df[-20:])
+    def prepare_prediction_data(self, start=0):
+        print('shape', self.df[start:].shape)
+        ds = tf.data.Dataset.from_tensor_slices(self.df[start:])
         ds = ds.window(20, shift=1, drop_remainder=True)
         ds = ds.flat_map(lambda w: w.batch(20))
         ds = ds.batch(32).prefetch(1)
         return ds
 
-    def save_predictions(self, predictions):
-        start_date = self.df.index.max() + datetime.timedelta(days=1)
-        prediction_records = []
-        for p in predictions[0]:
+    def save_predictions(self, predictions, start=0):
+        trading_days = self.df[start:].index.to_list()
+        start_date = self.df[start:].index.min() 
+        max_date = self.df[start:].index.max()
+        for i in range(20):
             start_date = start_date + datetime.timedelta(days=1)
+            while(start_date not in trading_days and start_date < max_date):
+                start_date = start_date + datetime.timedelta(days=1)
+
+            if start_date.weekday() > 4:
+                start_date = start_date + \
+                    datetime.timedelta(days=7 - start_date.weekday())
+        
+        prediction_records = []
+        predictions = predictions[:, 0] ## TODO Update if you want bulk predictionss
+        print('updated predictions shape', predictions.shape)
+        print('min date', self.df[start:].index.min())
+        print('max date', max_date)
+        print('start_date', start_date)
+        for p in predictions: ## TODO Update if you want bulk predictions
+            start_date = start_date + datetime.timedelta(days=1
+            )
+            while(start_date not in trading_days and start_date < max_date):
+                start_date = start_date + datetime.timedelta(days=1)
+
             if start_date.weekday() > 4:
                 start_date = start_date + \
                     datetime.timedelta(days=7 - start_date.weekday())
@@ -149,6 +170,8 @@ class PredictionController:
         prediction = self.model.predict(ds)
         prediction = scaler.inverse_transform(prediction)
 
+        print('predictions_shape', prediction.shape)
+
         prediction_records = self.save_predictions(prediction)
 
         return prediction_records
@@ -158,6 +181,10 @@ class PredictionController:
         all_stocks = [s.to_dict() for s in all_stocks]
 
         for s in all_stocks:
-            self.stock = s['symbol']
-            self.get_stock_data()
-            self.generate_predictions()
+            try:
+                self.stock = s['symbol']
+                self.get_stock_data()
+                self.generate_predictions()
+            except Exception as e:
+                print('error occuerd with', s)
+                print(e)

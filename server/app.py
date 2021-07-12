@@ -13,6 +13,7 @@ from models.prediction import Prediction
 from models.price import Price
 from models.sentiment import Sentiment
 from models.stock import Stock
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -61,18 +62,29 @@ def handle_news_scrape():
 def handle_prices(symbol):
     stock = Stock.query.filter(Stock.symbol == symbol.upper()).first()
     stock = stock.to_dict()
-    prices = Price.query.filter(Price.symbol == symbol.upper()).order_by(desc(Price.date)).limit(100).all()
+    prices = Price.query.filter(Price.symbol == symbol.upper()).order_by(desc(Price.date)).limit(250).all()
     prices = [p.to_dict() for p in prices]
 
     predictions = Prediction.query.filter(Prediction.symbol == symbol.upper()
-                                          ).order_by(desc(Prediction.date)).limit(5).all()
+                                          ).order_by(desc(Prediction.date)).all()
     predictions = [p.to_dict() for p in predictions]
     date_diff = datetime.datetime.now() - predictions[0]['date']
     date_diff = date_diff.days
 
     # TODO Check if the prediciton is in the right period
 
-    return jsonify({'prices': prices, 'stock': stock, 'predictions': predictions})
+    prices_df = pd.DataFrame(prices)
+    # prices_df.set_index('date', inplace=True)
+    predictions_df = pd.DataFrame(predictions)
+    # predictions_df.set_index('date', inplace=True)
+    predictions_df.rename(columns={'close': 'prediction'}, inplace=True)
+
+    df = predictions_df.merge(prices_df, on=['date', 'symbol'])
+
+    result = df.to_dict('records')
+
+    # return jsonify({'prices': prices, 'stock': stock, 'predictions': predictions})
+    return jsonify({'prices': result, 'stock': stock})
 
 
 if __name__ == '__main__':

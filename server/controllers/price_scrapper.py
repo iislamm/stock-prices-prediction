@@ -59,9 +59,9 @@ class PricesScrapper:
             print('new prices')
             last_db_price = Price.query.filter(
                 Price.symbol == self.symbol).order_by(desc(Price.date)).first()
-            last_db_price = last_db_price.to_dict()
-            latest_scrapped_prices = pd.DataFrame(latest_scrapped_prices)
             if last_db_price is not None:
+                last_db_price = last_db_price.to_dict()
+                latest_scrapped_prices = pd.DataFrame(latest_scrapped_prices)
                 latest_scrapped_prices = latest_scrapped_prices[
                     latest_scrapped_prices['Date'] >= last_db_price['date']]
 
@@ -82,18 +82,6 @@ class PricesScrapper:
         all_stocks = Stock.query.all()
         all_stocks = [s.to_dict()['symbol'] for s in all_stocks]
         for s in all_stocks:
+            self.session = requests.Session()
             self.symbol = s.upper()
             self.get_prices()
-
-    def get_predictions(self, start_date=None):
-        predictions = Prediction.query.filter(Prediction.symbol == self.stock.upper()
-                                              ).order_by(desc(Prediction.date)).limit(5).all()
-        predictions = [p.to_dict() for p in predictions]
-        date_diff = datetime.datetime.now() - predictions[0]['date']
-        date_diff = date_diff.days
-
-        latest_db_date = predictions[0]['date']
-
-        # TODO Check if the prediciton is in the right period
-
-        return predictions
