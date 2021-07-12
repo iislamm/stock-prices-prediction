@@ -4,41 +4,58 @@ const url = "https://stock-prediction-backend.click";
 
 const formatDate = (date) => moment(date).format("MMMM D YYYY");
 
+function isInArray(array, value) {
+  return (
+    (
+      array.find((item) => {
+        return item === value;
+      }) || []
+    ).length > 0
+  );
+}
+
 export const get_prices = async (symbol) => {
   const res = await fetch(`${url}/prices/${symbol}`);
   const body = await res.json();
-  let { prices, predictions } = body;
-  let tradingDays = []
+  let { prices } = body;
+  let tradingDays = [];
 
   prices = prices.map((p) => ({
     ...p,
-    close: Number(Number(p.close).toFixed(2)),
+    close: p.close ? Number(Number(p.close).toFixed(2)) : 0,
+    prediction: Number(Number(p.prediction).toFixed(2)),
     change: Number((Number(p.change) * 100).toFixed(2)),
     date: formatDate(p.date),
   }));
 
   prices.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  for (let p in prices) {
-    tradingDays.push(new Date(prices[p].date))
-  }
+  // for (let p in prices) {
+  //   tradingDays.push(prices[p].date);
+  // }
 
-  predictions = predictions.map((p) => ({
-    prediction: Number(Number(p.close).toFixed(2)),
-    date: formatDate(p.date),
-  }));
+  // predictions = predictions.map((p) => ({
+  //   prediction: Number(Number(p.close).toFixed(2)),
+  //   date: formatDate(p.date),
+  // }));
 
-  predictions = predictions.filter(
-    (p) =>
-      new Date(p.date) > Math.max.apply(null, tradingDays) ||
-      tradingDays.includes(new Date(p.date))
-  );
+  // console.log({ predictions });
 
-  predictions.sort((a, b) => new Date(a.date) - new Date(b.date));
+  // console.log({ tradingDays });
+
+  // predictions = predictions.filter(
+  //   (p) =>
+  //     new Date(p.date) > Math.max.apply(null, tradingDays.map(t => new Date(t))) ||
+  //     tradingDays.includes(p.date)
+  // );
+
+  // predictions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // console.log(predictions.length);
 
   const { stock } = body;
 
-  return { prices, stock, predictions };
+  return { prices, stock };
 };
 
 export const get_predictions = async (symbol) => {

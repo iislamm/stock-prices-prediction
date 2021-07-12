@@ -1,7 +1,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts";
 import { get_prices } from "../controllers/pricesController";
 import ArrowUpword from "@material-ui/icons/ArrowUpward";
 import ArrowDownward from "@material-ui/icons/ArrowDownward";
@@ -33,18 +33,18 @@ function CompanyPage() {
       get_prices(symbol).then(({ prices, stock, predictions }) => {
         setPrices(prices);
         setStock(stock);
-        setPredictions(predictions);
-        setData([...prices.slice(-recordsCount - 5, -1), ...predictions]);
+        // setPredictions(predictions);
+        setData(prices.slice(-recordsCount + 5));
       });
     }
     console.log({ data });
 	}, [data, prices, predictions, symbol, recordsCount]);
 	
 	useEffect(() => {
-		if (prices && predictions) {
-			setData([...prices.slice(-recordsCount - 5, -1), ...predictions]);
+		if (prices) {
+			setData(prices.slice(-recordsCount + 5));
 		}	
-	}, [recordsCount, prices, predictions])
+	}, [recordsCount, prices])
 
   useEffect(() => {
     setPrices(null);
@@ -109,35 +109,37 @@ function CompanyPage() {
               )}
               {prices[prices.length - 1].change}%
             </h4>
-					</header>
-					<div>
-						<InputLabel id='count-label'>Records Count</InputLabel>
-						<Select
-							labelId='count-label'
-							id='count-select'
-							value={recordsCount}
-							onChange={e => setRecordsCount(e.target.value)}>
-							<MenuItem value={25}>1M</MenuItem>
-							<MenuItem value={45}>2M</MenuItem>
-							<MenuItem value={65}>3M</MenuItem>
-							<MenuItem value={85}>4M</MenuItem>
-							<MenuItem value={105}>5M</MenuItem>
-							<MenuItem value={125}>6M</MenuItem>
-							<MenuItem value={245}>1Y</MenuItem>
-							</Select>
-					</div>
+          </header>
+          <div>
+            <InputLabel id="count-label">Records Count</InputLabel>
+            <Select
+              labelId="count-label"
+              id="count-select"
+              value={recordsCount}
+              onChange={(e) => setRecordsCount(e.target.value)}
+            >
+              <MenuItem value={25}>1M</MenuItem>
+              <MenuItem value={45}>2M</MenuItem>
+              <MenuItem value={65}>3M</MenuItem>
+              <MenuItem value={85}>4M</MenuItem>
+              <MenuItem value={105}>5M</MenuItem>
+              <MenuItem value={125}>6M</MenuItem>
+              <MenuItem value={245}>1Y</MenuItem>
+            </Select>
+          </div>
           <LineChart
             className="chart"
             width={chartWidth}
             height={400}
             data={data}
           >
-						<Legend className='legend' />
-            <Line type="monotone" dataKey="close" stroke="#8884d8" />
-            <Line type="monotone" dataKey="prediction" stroke="#bd84d8" />
-						<XAxis dataKey="date" allowDuplicatedCategory={false} />
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
             <YAxis type="number" domain={priceRange} />
-						<Tooltip />
+            <Tooltip />
+            <Legend className="legend" />
+            <Line type="monotone" dataKey="close" stroke="#8884d8" />
+            <Line type="monotone" dataKey="prediction" stroke="#e3a049" />
           </LineChart>
         </React.Fragment>
       ) : (
