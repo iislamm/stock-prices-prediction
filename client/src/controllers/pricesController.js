@@ -4,21 +4,10 @@ const url = "https://stock-prediction-backend.click";
 
 const formatDate = (date) => moment(date).format("MMMM D YYYY");
 
-function isInArray(array, value) {
-  return (
-    (
-      array.find((item) => {
-        return item === value;
-      }) || []
-    ).length > 0
-  );
-}
-
 export const get_prices = async (symbol) => {
   const res = await fetch(`${url}/prices/${symbol}`);
   const body = await res.json();
   let { prices } = body;
-  let tradingDays = [];
 
   prices = prices.map((p) => ({
     ...p,

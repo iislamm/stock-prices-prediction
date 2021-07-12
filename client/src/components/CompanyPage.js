@@ -17,7 +17,6 @@ function getWindowDimensions() {
 
 function CompanyPage() {
   const [prices, setPrices] = useState(null);
-  const [predictions, setPredictions] = useState(null);
   const [data, setData] = useState(null);
   const [stock, setStock] = useState(null);
   const { symbol } = useParams();
@@ -26,11 +25,11 @@ function CompanyPage() {
   );
   const [chartWidth, setChartWidth] = useState(900);
 	const [priceRange, setPriceRange] = useState(null);
-	const [recordsCount, setRecordsCount] = useState(25);
+	const [recordsCount, setRecordsCount] = useState(125);
 
   useEffect(() => {
     if (!prices) {
-      get_prices(symbol).then(({ prices, stock, predictions }) => {
+      get_prices(symbol).then(({ prices, stock }) => {
         setPrices(prices);
         setStock(stock);
         // setPredictions(predictions);
@@ -38,7 +37,7 @@ function CompanyPage() {
       });
     }
     console.log({ data });
-	}, [data, prices, predictions, symbol, recordsCount]);
+	}, [data, prices, symbol, recordsCount]);
 	
 	useEffect(() => {
 		if (prices) {
